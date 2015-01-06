@@ -1,0 +1,12 @@
+{% extends 'index.html' %}
+{% block title %} Notes: List {% end %}
+{% block main %}
+    {% for note in notes %}        
+        <div class="row">
+            <p>{{ note['title'] }}</p>
+            <p>{{ note['body'] }}</p>
+            <p>{{ note['tags'] }}</p>
+            <p>{{ note['author'] }}</p>            
+        </div>        
+    {% end %}
+{% end %}
