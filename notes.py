@@ -39,10 +39,10 @@ class NotesHandler(tornado.web.RequestHandler):
         try:
             if _id:                
                 note = coll.find_one({"_id": ObjectId(_id)})
-                result = dumps(note) 
+                result = dumps(note, indent=4) 
             else:                
                 notes = coll.find()                
-                result = dumps(notes)
+                result = dumps(notes, indent=4)
 
             self.set_header('Content-Type', 'application/json')
             self.set_status(200)
@@ -60,12 +60,26 @@ class NotesHandler(tornado.web.RequestHandler):
         coll.insert(json.loads(self.request.body))
         
         self.set_header('Content-Type', 'application/json')
-        self.set_status(200)
+        self.set_status(201)
         self.write(self.request.body)
 
     
     def delete(self, _id=None):
-        pass    
+        try:            
+            if _id:
+                coll = self.application.db.notes
+                note = coll.find_one({"_id": ObjectId(_id)})
+                coll.remove({"_id": ObjectId(_id)})
+
+                self.set_header('Content-Type', 'application/json')
+                self.set_status(200)
+                self.write(dumps(note))
+        
+        except Exception as e:
+            self.set_header('Content-Type', 'application/json')
+            self.set_status(400)
+            self.write({'error_message': '{0}'.format(e)})
+
     
 
 
