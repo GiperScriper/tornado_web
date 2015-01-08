@@ -15,6 +15,7 @@ import tornado.web
 
 import pymongo
 import json
+import time
 import logging as logger
 
 import settings
@@ -57,7 +58,9 @@ class NotesHandler(tornado.web.RequestHandler):
     
     def post(self):
         coll = self.application.db.notes
-        coll.insert(json.loads(self.request.body))
+        data = json.loads(self.request.body)        
+        data.update({'date_added': time.time()}) 
+        coll.insert(data)
         
         self.set_header('Content-Type', 'application/json')
         self.set_status(201)
@@ -72,7 +75,7 @@ class NotesHandler(tornado.web.RequestHandler):
                 coll.remove({"_id": ObjectId(_id)})
 
                 self.set_header('Content-Type', 'application/json')
-                self.set_status(200)
+                self.set_status(204)
                 self.write(dumps(note))
         
         except Exception as e:
