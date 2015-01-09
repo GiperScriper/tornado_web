@@ -64,7 +64,7 @@ class NotesHandler(tornado.web.RequestHandler):
         
         self.set_header('Content-Type', 'application/json')
         self.set_status(201)
-        self.write(self.request.body)
+        self.write(dumps(data))
 
     
     def delete(self, _id=None):
@@ -73,9 +73,10 @@ class NotesHandler(tornado.web.RequestHandler):
                 coll = self.application.db.notes
                 note = coll.find_one({"_id": ObjectId(_id)})
                 coll.remove({"_id": ObjectId(_id)})
-
+                status_code = 204 if note else 404
+                print note
                 self.set_header('Content-Type', 'application/json')
-                self.set_status(204)
+                self.set_status(status_code)
                 self.write(dumps(note))
         
         except Exception as e:
@@ -110,5 +111,5 @@ if __name__ == "__main__":
     tornado.options.parse_command_line()
     http_server = Application()
     http_server.listen(options.port)
-    logger.info('Tornado server is starting..')
+    logger.info('Tornado server is running..')
     tornado.ioloop.IOLoop.instance().start()
