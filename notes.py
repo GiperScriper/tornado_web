@@ -24,8 +24,10 @@ from bson.json_util import dumps
 from bson.objectid import ObjectId
 
 from tornado.options import define, options
+from api.db import *
 
 define('port', default=8889, help='run on the given port', type=int)
+
 
 
 class IndexHandler(tornado.web.RequestHandler):
@@ -33,38 +35,39 @@ class IndexHandler(tornado.web.RequestHandler):
         self.render('notes/index.html')
 
 
-class NotesHandler(tornado.web.RequestHandler): 
-    def get(self, _id=None):
-        coll = self.application.db.notes
-        result = []
+class NotesHandler(tornado.web.RequestHandler):     
+    def get(self, _id=None): 
         try:
-            if _id:                
-                note = coll.find_one({"_id": ObjectId(_id)})
-                result = dumps(note, indent=4) 
-            else:                
-                notes = coll.find()                
-                result = dumps(notes, indent=4)
-
-            self.set_header('Content-Type', 'application/json')
+            result = get_note_or_notes(_id)
+            
+            self.set_header('Content-Type', 'text2/html')
             self.set_status(200)
             self.write(result)
         
         except Exception as e:
-            self.set_header('Content-Type', 'application/json')
+            self.set_header('Content-Type', 'text2/html')            
             self.set_status(400)
             self.write({'error_message': '{0}'.format(e)})
         #self.render('notes/notes.html', notes=notes)
 
     
-    def post(self):
+    def post(self): 
+        notes_fields = ['title', 'body', 'author', 'tags']
+        
         coll = self.application.db.notes
         data = json.loads(self.request.body)        
-        data.update({'date_added': time.time()}) 
+        data.update({'date_added': int(time.time())}) 
         coll.insert(data)
         
         self.set_header('Content-Type', 'application/json')
         self.set_status(201)
         self.write(dumps(data))
+
+
+    def put(self, _id=None):
+        coll = self.application.db.notes
+        data = json.loads(self.request.body)
+
 
     
     def delete(self, _id=None):
