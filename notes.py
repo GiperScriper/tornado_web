@@ -12,11 +12,13 @@ db.notes.insert({
 """
 import tornado.ioloop
 import tornado.web
+import tornado.escape
 
 import pymongo
 import json
 import time
 import logging as logger
+import base64, uuid
 
 import settings
 
@@ -25,6 +27,7 @@ from bson.objectid import ObjectId
 
 from tornado.options import define, options
 from api.db import *
+from api.registration import Registration
 
 define('port', default=8889, help='run on the given port', type=int)
 
@@ -32,37 +35,56 @@ define('port', default=8889, help='run on the given port', type=int)
 
 class IndexHandler(tornado.web.RequestHandler):
     def get(self):
-        self.render('notes/index.html')
+        self.set_secure_cookie("hekko", "MySecureCookie")
+        cookie = self.get_secure_cookie("hekko")
+        print "Cookie %s" % cookie
+        self.render('notes/index.html', cookie=cookie)
+
+
+class LoginHandler(tornado.web.RequestHandler):
+    def get(self):
+        self.render('notes/login.html')
+
+
+class RegistrationHandler(tornado.web.RequestHandler):
+    def post(self):
+        data = json.loads(self.request.body)
+        self.write(data)
+        result = Registration(data['email'], data['password'], data['password2'])
+        print result.save_user()
 
 
 class NotesHandler(tornado.web.RequestHandler):     
     def get(self, _id=None): 
+        method = self.request.method
         try:
-            result = get_note_or_notes(_id)
+            result, status_code = get_note_or_notes(_id, method)
             
-            self.set_header('Content-Type', 'text2/html')
-            self.set_status(200)
+            self.set_header('Content-Type', 'application/json')
+            self.set_status(status_code)
             self.write(result)
         
         except Exception as e:
-            self.set_header('Content-Type', 'text2/html')            
+            self.set_header('Content-Type', 'application/json')            
             self.set_status(400)
             self.write({'error_message': '{0}'.format(e)})
         #self.render('notes/notes.html', notes=notes)
 
     
     def post(self): 
-        notes_fields = ['title', 'body', 'author', 'tags']
-        
-        coll = self.application.db.notes
-        data = json.loads(self.request.body)        
-        data.update({'date_added': int(time.time())}) 
-        coll.insert(data)
-        
-        self.set_header('Content-Type', 'application/json')
-        self.set_status(201)
-        self.write(dumps(data))
+        try:
+            data = json.loads(self.request.body)
+            result, status_code = create_note(data)
 
+            self.set_header('Content-Type', 'application/json')
+            self.set_status(status_code)
+            self.write(result)
+
+        except Exception as e:
+            self.set_header('Content-Type', 'application/json')            
+            self.set_status(400)
+            self.write({'error_message': '{0}'.format(e)})
+        
 
     def put(self, _id=None):
         coll = self.application.db.notes
@@ -72,41 +94,38 @@ class NotesHandler(tornado.web.RequestHandler):
     
     def delete(self, _id=None):
         try:            
-            if _id:
-                coll = self.application.db.notes
-                note = coll.find_one({"_id": ObjectId(_id)})
-                coll.remove({"_id": ObjectId(_id)})
-                status_code = 204 if note else 404
-                print note
-                self.set_header('Content-Type', 'application/json')
-                self.set_status(status_code)
-                self.write(dumps(note))
+            result, status_code = delete_note(_id)
+            
+            self.set_header('Content-Type', 'application/json')
+            self.set_status(status_code)
+            self.write(result)
         
         except Exception as e:
             self.set_header('Content-Type', 'application/json')
             self.set_status(400)
             self.write({'error_message': '{0}'.format(e)})
 
-    
-
 
 class Application(tornado.web.Application):
     def __init__(self):
         handlers = ROUTES       
-        config = dict(
-            template_path=settings.TEMPLATE_PATH,
-            static_path=settings.STATIC_PATH,       
-            debug=True
-        )
-        conn = pymongo.Connection("localhost", 27017)
-        self.db = conn["notes"]
+        config = {
+            "template_path": settings.TEMPLATE_PATH,
+            "static_path": settings.STATIC_PATH,       
+            "debug": True,
+            "cookie_secret": base64.b64encode(uuid.uuid4().bytes + uuid.uuid4().bytes)
+        }
+        #conn = pymongo.Connection("localhost", 27017)
+        #self.db = conn["notes"]
         tornado.web.Application.__init__(self, handlers, **config)
 
 
 ROUTES = [
-    (r"/", IndexHandler),
+    (r"/index", IndexHandler),
+    (r"/", LoginHandler),
     (r"/notes", NotesHandler),
-    (r"/notes/(.*)", NotesHandler)
+    (r"/notes/(.*)", NotesHandler),
+    (r"/register", RegistrationHandler)
 ]
 
 
