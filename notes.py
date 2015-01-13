@@ -1,12 +1,18 @@
 """Notes Structure:
 
 db.notes.insert({
-    "title":"My First Note",
+    "first"
+    lastname
+    notes: [
+    {"title":"My First Note",
     "body": "<p>some text</p>",
     "author": "Toby Segaran",
     "tags": ["python", "web"],
     "date_added":1310248056,
-    "date_modified":1310248057,
+    "date_modified":1310248057,},
+    {},
+
+    ]
 })
 
 """
@@ -28,6 +34,7 @@ from bson.objectid import ObjectId
 from tornado.options import define, options
 from api.db import *
 from api.registration import Registration
+from api.constants import UserKeys
 
 define('port', default=8889, help='run on the given port', type=int)
 
@@ -49,9 +56,28 @@ class LoginHandler(tornado.web.RequestHandler):
 class RegistrationHandler(tornado.web.RequestHandler):
     def post(self):
         data = json.loads(self.request.body)
-        self.write(data)
-        result = Registration(data['email'], data['password'], data['password2'])
-        print result.save_user()
+        status = {}
+        status_code = 400        
+        
+        result = Registration(
+            data[UserKeys.Email], 
+            data[UserKeys.Password], 
+            data[UserKeys.RePassword]
+        )
+        
+        if result.check_unique_email():
+            if result.check_password():
+                result.save_user()
+                status['message'] = 'complete registration'
+                status_code = 201
+            else:
+                status['error_message'] = "passwords doesn't match"
+        else:
+            status['error_message'] = 'email already exist'
+
+        self.set_header('Content-Type', 'application/json')            
+        self.set_status(status_code)
+        self.write(status)
 
 
 class NotesHandler(tornado.web.RequestHandler):     

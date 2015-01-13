@@ -5,7 +5,7 @@ import time
 from bson.json_util import dumps
 from bson.objectid import ObjectId
 
-from config import DbKeys
+from constants import DbKeys
 
 
 def db_open_close(fn):
@@ -18,13 +18,14 @@ def db_open_close(fn):
         return output
     return wrapper
 
+
 def time_it(fn):
     def wrapper(*args, **kwargs):
         start = time.time()
         output = fn(*args, **kwargs)
         end = time.time() - start
-        fn.__name__ = 'my_name'
-        print "{}: {}".format(fn.__name__, end)
+        wrapper.__name__ = fn.__name__        
+        print "{}: {}".format(wrapper.__name__, end)
         return output
     return wrapper
 
