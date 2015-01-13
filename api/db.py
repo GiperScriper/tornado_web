@@ -5,11 +5,33 @@ import time
 from bson.json_util import dumps
 from bson.objectid import ObjectId
 
-# connect to Notes database
-db = pymongo.Connection("localhost", 27017)['notes']
+from config import DbKeys
 
 
-def get_note_or_notes(_id, method):
+def db_open_close(fn):
+    def wrapper(*args, **kwargs):
+        conn = pymongo.Connection(DbKeys.Host, DbKeys.Port)
+        # select default database
+        kwargs['db'] = conn[DbKeys.Notes]
+        output = fn(*args, **kwargs)
+        conn.close()
+        return output
+    return wrapper
+
+def time_it(fn):
+    def wrapper(*args, **kwargs):
+        start = time.time()
+        output = fn(*args, **kwargs)
+        end = time.time() - start
+        fn.__name__ = 'my_name'
+        print "{}: {}".format(fn.__name__, end)
+        return output
+    return wrapper
+
+
+@time_it
+@db_open_close
+def get_note_or_notes(_id, method, db=None):
     """Returns all notes or one note
     """
     result = []
@@ -31,7 +53,8 @@ def get_note_or_notes(_id, method):
     return (result, status_code)
 
 
-def delete_note(_id):
+@db_open_close
+def delete_note(_id, db=None):
     """Delete note
     """
     result = []
@@ -48,7 +71,8 @@ def delete_note(_id):
     return (result, status_code)
 
 
-def create_note(data):
+@db_open_close
+def create_note(data, db=None):
     """Save note
     """
     notes_fields = ['title', 'body', 'author', 'tags']
@@ -60,6 +84,3 @@ def create_note(data):
     status_code = 201
     
     return (dumps(result), status_code)    
-
-
-

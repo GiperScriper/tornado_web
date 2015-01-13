@@ -56,7 +56,9 @@ class RegistrationHandler(tornado.web.RequestHandler):
 
 class NotesHandler(tornado.web.RequestHandler):     
     def get(self, _id=None): 
+        uri = self.request.uri
         method = self.request.method
+        print uri
         try:
             result, status_code = get_note_or_notes(_id, method)
             
