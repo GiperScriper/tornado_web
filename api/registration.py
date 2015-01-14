@@ -2,7 +2,7 @@ import time
 import bcrypt
 
 from db import db_open_close
-from config import UserKeys
+from constants import UserKeys
 
 
 class Registration(object):
@@ -42,3 +42,4 @@ class Registration(object):
 #...     print("It Matches!")
 #... else:
 #...     print("It Does not Match :(")
+

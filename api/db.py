@@ -24,8 +24,6 @@ def time_it(fn):
         start = time.time()
         output = fn(*args, **kwargs)
         end = time.time() - start
-        wrapper.__name__ = fn.__name__        
-        print "{}: {}".format(wrapper.__name__, end)
         return output
     return wrapper
 
