@@ -1,6 +1,7 @@
 import bcrypt
 
 from db import db_open_close
+from constants import UserKeys
 
 
 class Auth(object):
@@ -8,8 +9,13 @@ class Auth(object):
 		self.email = email
 		self.password = password
 
-	def auth_user(self, db=None):
-		pass
+	def verify_user(self, hash):
+		return bcrypt.hashpw(self.password, hash) == hash
 
-	def verify_email(self, db=None):
-		pass
+	@db_open_close
+	def find_user_by_email(self, db=None):
+		user = db.notes.find_one(
+			{ UserKeys.Email: self.email }, 
+			{ UserKeys.Email: True, UserKeys.Hash: True }
+		)
+		return user if user else False

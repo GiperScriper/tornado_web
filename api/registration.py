@@ -36,10 +36,3 @@ class Registration(object):
 	
 	def _get_hashed_password(self, password):
 		return bcrypt.hashpw(password, bcrypt.gensalt(4))
-
-
-# if bcrypt.hashpw(password, hashed) == hashed:
-#...     print("It Matches!")
-#... else:
-#...     print("It Does not Match :(")
-
