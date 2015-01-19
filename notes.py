@@ -47,6 +47,7 @@ class BaseHandler(tornado.web.RequestHandler):
 
 
 class IndexHandler(tornado.web.RequestHandler):
+    @tornado.web.authenticated
     def get(self):
         #self.set_secure_cookie("hekko", "MySecureCookie")
         #cookie = self.get_secure_cookie("hekko")
@@ -172,7 +173,8 @@ class Application(tornado.web.Application):
             "template_path": settings.TEMPLATE_PATH,
             "static_path": settings.STATIC_PATH,       
             "debug": True,
-            "cookie_secret": settings.COOKIE_SECRET
+            "cookie_secret": settings.COOKIE_SECRET,
+            "login_url": "/"
         }
         #conn = pymongo.Connection("localhost", 27017)
         #self.db = conn["notes"]
