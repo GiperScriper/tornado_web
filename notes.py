@@ -24,7 +24,6 @@ import pymongo
 import json
 import time
 import logging as logger
-import base64, uuid
 
 import settings
 
@@ -32,25 +31,57 @@ from bson.json_util import dumps
 from bson.objectid import ObjectId
 
 from tornado.options import define, options
+
 from api.db import *
 from api.registration import Registration
+from api.auth import Auth
 from api.constants import UserKeys
 
 define('port', default=8889, help='run on the given port', type=int)
 
 
+class BaseHandler(tornado.web.RequestHandler):
+    def get_current_user(self):
+        user = self.get_secure_cookie("user")
+        return user
+
 
 class IndexHandler(tornado.web.RequestHandler):
     def get(self):
-        self.set_secure_cookie("hekko", "MySecureCookie")
-        cookie = self.get_secure_cookie("hekko")
-        print "Cookie %s" % cookie
-        self.render('notes/index.html', cookie=cookie)
+        #self.set_secure_cookie("hekko", "MySecureCookie")
+        #cookie = self.get_secure_cookie("hekko")
+        self.render('notes/index.html')
+        #with open('templates/notes/index.html', 'r') as file:
+        #    self.write(file.read())
+
 
 
 class LoginHandler(tornado.web.RequestHandler):
     def get(self):
         self.render('notes/login.html')
+
+
+class AuthHandler(tornado.web.RequestHandler):
+    def post(self):
+        data = json.loads(self.request.body)
+        
+        user = Auth(
+            data[UserKeys.Email],
+            data[UserKeys.Password]
+        )
+
+        user_data = user.find_user_by_email()
+
+        if user_data:
+            if user.verify_user(user_data[UserKeys.Hash]):
+                print "User auth"
+                self.set_secure_cookie(
+                    UserKeys.User,
+                    user_data[UserKeys.Email]
+                )
+                self.redirect('/index')
+            else:
+                print "password dont match"
 
 
 class RegistrationHandler(tornado.web.RequestHandler):
@@ -84,7 +115,7 @@ class NotesHandler(tornado.web.RequestHandler):
     def get(self, _id=None): 
         uri = self.request.uri
         method = self.request.method
-        print uri
+        #print uri
         try:
             result, status_code = get_note_or_notes(_id, method)
             
@@ -141,7 +172,7 @@ class Application(tornado.web.Application):
             "template_path": settings.TEMPLATE_PATH,
             "static_path": settings.STATIC_PATH,       
             "debug": True,
-            "cookie_secret": base64.b64encode(uuid.uuid4().bytes + uuid.uuid4().bytes)
+            "cookie_secret": settings.COOKIE_SECRET
         }
         #conn = pymongo.Connection("localhost", 27017)
         #self.db = conn["notes"]
@@ -151,6 +182,7 @@ class Application(tornado.web.Application):
 ROUTES = [
     (r"/index", IndexHandler),
     (r"/", LoginHandler),
+    (r"/auth", AuthHandler),
     (r"/notes", NotesHandler),
     (r"/notes/(.*)", NotesHandler),
     (r"/register", RegistrationHandler)

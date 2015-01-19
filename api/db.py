@@ -1,4 +1,3 @@
-import pymongo
 import json
 import time
 
@@ -6,31 +5,9 @@ from bson.json_util import dumps
 from bson.objectid import ObjectId
 
 from constants import DbKeys
+from decorators import db_open_close
 
 
-def db_open_close(fn):
-    def wrapper(*args, **kwargs):
-        conn = pymongo.Connection(DbKeys.Host, DbKeys.Port)
-        # select default database
-        kwargs['db'] = conn[DbKeys.Notes]
-        output = fn(*args, **kwargs)
-        conn.close()
-        return output
-    return wrapper
-
-
-def time_it(fn):
-    def wrapper(*args, **kwargs):
-        start = time.time()
-        output = fn(*args, **kwargs)
-        end = time.time() - start
-        wrapper.__name__ = fn.__name__        
-        print "{}: {}".format(wrapper.__name__, end)
-        return output
-    return wrapper
-
-
-@time_it
 @db_open_close
 def get_note_or_notes(_id, method, db=None):
     """Returns all notes or one note

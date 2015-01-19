@@ -1,8 +1,8 @@
 import time
 import bcrypt
 
-from db import db_open_close
-from config import UserKeys
+from decorators import db_open_close
+from constants import UserKeys
 
 
 class Registration(object):
@@ -38,7 +38,4 @@ class Registration(object):
 		return bcrypt.hashpw(password, bcrypt.gensalt(4))
 
 
-# if bcrypt.hashpw(password, hashed) == hashed:
-#...     print("It Matches!")
-#... else:
-#...     print("It Does not Match :(")
+

@@ -11,6 +11,7 @@ class UserKeys:
 	Hash = 'hash'
 	Notes = 'notes'
 	DateCreated = 'date_created'
+	User = 'user'
 
 
 class NoteKeys:
