@@ -43,15 +43,17 @@ define('port', default=8889, help='run on the given port', type=int)
 class BaseHandler(tornado.web.RequestHandler):
     def get_current_user(self):
         user = self.get_secure_cookie("user")
-        return user
+        return user if user else None
 
 
-class IndexHandler(tornado.web.RequestHandler):
+class IndexHandler(BaseHandler):
     @tornado.web.authenticated
     def get(self):
         #self.set_secure_cookie("hekko", "MySecureCookie")
-        #cookie = self.get_secure_cookie("hekko")
-        self.render('notes/index.html')
+        user = self.get_secure_cookie("user")
+        if user:
+            print "user cookie is: %s" % user
+        self.render('notes/index.html', user=user)
         #with open('templates/notes/index.html', 'r') as file:
         #    self.write(file.read())
 
@@ -113,6 +115,7 @@ class RegistrationHandler(tornado.web.RequestHandler):
 
 
 class NotesHandler(tornado.web.RequestHandler):     
+    #@tornado.web.authenticated
     def get(self, _id=None): 
         uri = self.request.uri
         method = self.request.method
@@ -147,8 +150,9 @@ class NotesHandler(tornado.web.RequestHandler):
         
 
     def put(self, _id=None):
-        coll = self.application.db.notes
+        #coll = self.application.db.notes
         data = json.loads(self.request.body)
+        print data
 
 
     
